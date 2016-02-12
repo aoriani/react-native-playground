@@ -6,7 +6,9 @@ import React, {
 	View,
 	ListView,
 	StyleSheet,
-	ToastAndroid
+	ToastAndroid,
+	ToolbarAndroid,
+	PullToRefreshViewAndroid
 } from 'react-native';
 
 import BookItem from './bookitem';
@@ -21,22 +23,37 @@ class BookList extends Component {
 	      }),
 	      loaded: false,
 	    };
+	    this.inflightRequest = false;
   	}
 
-	render() {
+  	render() {
+  		return (
+  			<View style={styles.container} >
+  				<ToolbarAndroid 
+  					style={styles.toolbar} 
+  					title="Hello" 
+  					titleColor={'white'} 
+  					actions={[{title: 'FAQ', show: 'always'}, {title: 'Settings', show: 'never'}]}/>
+  				{this.renderContent()}
+  			</View>
+  		)
+  	}
+
+	renderContent() {
 		if (!this.state.loaded) {
 			return <Text>Loading...</Text>
 		} else {
 			return (
-				<ListView 
-					style={styles.container}
-					dataSource={this.state.dataSource}
-					renderRow={this.renderRow.bind(this)}
-					renderHeader={this.renderHeader.bind(this)} 
-					renderFooter={this.renderFooter.bind(this)}
-					renderSectionHeader={this.renderSectionHeader.bind(this)}
-					onEndReached = {()=> {ToastAndroid.show('Reached the end',ToastAndroid.SHORT)}}
-					renderSeparator={(sectionID, rowID) => <View key={`${sectionID}-${rowID}-sep`} style={{backgroundColor: 'black', height: 1}}/>}/>
+				<PullToRefreshViewAndroid style={styles.container} onRefresh={this.fetchBooks.bind(this)}>
+					<ListView 
+						style={styles.container}
+						dataSource={this.state.dataSource}
+						renderRow={this.renderRow.bind(this)}
+						renderHeader={this.renderHeader.bind(this)} 
+						renderFooter={this.renderFooter.bind(this)}
+						renderSectionHeader={this.renderSectionHeader.bind(this)}
+						renderSeparator={(sectionID, rowID) => <View key={`${sectionID}-${rowID}-sep`} style={{backgroundColor: 'black', height: 1}}/>}/>
+				</PullToRefreshViewAndroid>
 			);
 		}
 	}
@@ -51,20 +68,32 @@ class BookList extends Component {
 		const API_STEM = 'http://api.nytimes.com/svc/books/v3/lists'
 		const ENDPOINT = `${API_STEM}/${QUERY_TYPE}?response-format=json&api-key=${API_KEY}`;
 
-		fetch(ENDPOINT)
-			.then((response) => response.json())
-			.then((json) => {
-				this.setState({
-					dataSource: this.state.dataSource.cloneWithRowsAndSections({"Fiction": json.results.books, "Biography" : json.results.books}, ["Fiction", "Biography"]),
-					loaded: true
+		if (!this.inflightRequest) {
+			this.inflightRequest = true;
+			fetch(ENDPOINT)
+				.then((response) => response.json())
+				.then((json) => {
+					this.inflightRequest = true;
+					this.setState({
+						dataSource: this.state.dataSource.cloneWithRowsAndSections({"Fiction": json.results.books, "Biography" : json.results.books}, ["Fiction", "Biography"]),
+						loaded: true
+					});
+				})
+				.catch((error) => {
+					this.inflightRequest = false;
+					console.warn(error)
 				});
-			})
-			.catch((error) => {console.warn(error)});
+		}
 	}
 
 	renderRow(data, sectionID, rowID, highlightRow) {
 		return (
-			<BookItem key={`${sectionID}-${rowID}`} onTap={this.onItemPress.bind(this, data, sectionID, rowID)} cover={data.book_image} title={data.title} author={data.author}/>
+			<BookItem 
+				key={`${sectionID}-${rowID}`} 
+				onTap={this.onItemPress.bind(this, data, sectionID, rowID)} 
+				cover={data.book_image} 
+				title={data.title} 
+				author={data.author}/>
 		);
 	}
 
@@ -90,6 +119,11 @@ class BookList extends Component {
 let styles = StyleSheet.create({
 	container: {
 		flex: 1
+	},
+
+	toolbar: {
+		backgroundColor: 'cornflowerblue',
+		height: 56
 	},
 
 	header: {
