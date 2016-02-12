@@ -31,7 +31,7 @@ class BookList extends Component {
 				<ListView 
 					style={styles.container}
 					dataSource={this.state.dataSource}
-					renderRow={this.renderRow}
+					renderRow={this.renderRow.bind(this)}
 					renderHeader={this.renderHeader.bind(this)} 
 					renderFooter={this.renderFooter.bind(this)}
 					renderSectionHeader={this.renderSectionHeader.bind(this)}
@@ -64,7 +64,7 @@ class BookList extends Component {
 
 	renderRow(data, sectionID, rowID, highlightRow) {
 		return (
-			<BookItem key={`${sectionID}-${rowID}`} onTap={this.onItemPress().bind(this)} cover={data.book_image} title={data.title} author={data.author}/>
+			<BookItem key={`${sectionID}-${rowID}`} onTap={this.onItemPress.bind(this, data, sectionID, rowID)} cover={data.book_image} title={data.title} author={data.author}/>
 		);
 	}
 
@@ -82,8 +82,8 @@ class BookList extends Component {
 		return <Text style={styles.header}>{sectionID}</Text>
 	}
 
-	onItemPress() {
-		ToastAndroid.show("hello" ,ToastAndroid.SHORT);
+	onItemPress(data, sectionID, rowID) {
+		ToastAndroid.show(data.title, ToastAndroid.SHORT);
 	}
 }
 

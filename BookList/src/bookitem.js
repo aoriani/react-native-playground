@@ -62,7 +62,7 @@ BookItem.propTypes = {
 	cover: PropTypes.string.isRequired,
 	title: PropTypes.string.isRequired,
 	author: PropTypes.string.isRequired,
-	onTap: PropTypes.function
+	onTap: PropTypes.func
 	
 };
 
